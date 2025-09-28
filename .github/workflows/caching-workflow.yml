@@ -1,0 +1,40 @@
+name: CI with Dependency Caching
+
+# Run on pushes to main and allow manual runs
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # This is the core caching step.
+      - name: Cache npm dependencies
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          # The path to the directory we want to cache (npm's cache folder)
+          path: ~/.npm
+          # The specific key required by the prompt
+          key: cache-523f256
+          # An optional restore key (not needed here as the key is static)
+          # restore-keys: |
+          #   cache-523f256
+
+      # This step echoes the cache hit/miss result.
+      # On the first run, the output will be 'false'.
+      - name: prime-cache-523f256
+        run: echo "The cache was hit:${{ steps.cache-npm.outputs.cache-hit }}"
+
+      # This step only runs if the cache was not found.
+      - name: Install dependencies
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm ci
